@@ -80,6 +80,7 @@ interface ControlsPanelProps {
   isAutoRamping?: boolean;
   onStartAutoRamp?: () => void;
   onStopAutoRamp?: () => void;
+  hidePrimaryForce?: boolean;
 }
 
 export const ControlsPanel: React.FC<ControlsPanelProps> = ({
@@ -93,6 +94,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   isAutoRamping,
   onStartAutoRamp,
   onStopAutoRamp,
+  hidePrimaryForce = false,
 }) => {
   const isZh = lang === 'zh';
 
@@ -146,91 +148,93 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
 
   return (
     <div className="w-full flex flex-col gap-3 text-xs">
-      {/* 1. Applied Force Controls (Top Priority - Pulling Right from 0N) */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-amber-200/80 dark:border-amber-900/40 p-3.5 shadow-xs flex flex-col gap-2.5 bg-gradient-to-b from-amber-50/30 to-white dark:from-amber-950/10 dark:to-slate-900">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
-            <Gauge className="w-3.5 h-3.5 text-amber-500" />
-            <span>{isZh ? '水平向右外力 (彈簧秤拉力)' : 'Rightward Pull Force F'}</span>
-          </div>
-          <button
-            onClick={() => setParams((prev) => ({ ...prev, appliedForce: 0 }))}
-            className="text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors"
-            title={isZh ? '放開彈簧秤，拉力歸零' : 'Release spring scale to 0N'}
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>{isZh ? '放開歸零 (0N)' : 'Zero (0N)'}</span>
-          </button>
-        </div>
-
-        <div>
-          <div className="flex justify-between items-center text-[11px] mb-1">
-            <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center">
-              <span>{isZh ? '向右拉力 F (0~120N):' : 'Rightward Pull F:'}</span>
-              <InfoTooltip
-                title={isZh ? '水平向右外力 F' : 'Rightward Pull Force F'}
-                formula="Fnet = F - f"
-                description={
-                  isZh
-                    ? '由彈簧秤向右施加的外力。當 F ≤ fs,max 時靜摩擦力等大反向抵消 (合力為 0)；當 F > fs,max 時克服摩擦力，合力大於 0 開始向右加速。'
-                    : 'Pull force applied by the spring scale. When F ≤ fs,max, static friction cancels it; when F > fs,max, net force accelerates block rightward.'
-                }
-              />
-            </span>
-            <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-sm">
-              {params.appliedForce} N
-            </span>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="120"
-            step="1"
-            value={params.appliedForce}
-            onChange={(e) => setParams((prev) => ({ ...prev, appliedForce: Math.max(0, parseInt(e.target.value, 10)) }))}
-            className="w-full accent-amber-500 cursor-pointer"
-          />
-        </div>
-
-        {/* Quick step buttons starting from 0 */}
-        <div className="grid grid-cols-5 gap-1 text-[11px] font-mono">
-          {[0, 10, 20, 30, 50].map((val) => (
+      {/* 1. Applied Force Controls (Only if not hidden) */}
+      {!hidePrimaryForce && (
+        <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-amber-300/60 dark:border-amber-900/40 p-3.5 shadow-sm flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
+              <Gauge className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isZh ? '水平向右外力 (彈簧秤拉力)' : 'Rightward Pull Force F'}</span>
+            </div>
             <button
-              key={val}
-              onClick={() => setParams((prev) => ({ ...prev, appliedForce: val }))}
-              className={`py-1 rounded-md border font-medium transition-colors ${
-                params.appliedForce === val
-                  ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-700'
-                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800'
+              onClick={() => setParams((prev) => ({ ...prev, appliedForce: 0 }))}
+              className="text-[10px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 font-semibold flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 transition-colors"
+              title={isZh ? '放開彈簧秤，拉力歸零' : 'Release spring scale to 0N'}
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>{isZh ? '放開歸零 (0N)' : 'Zero (0N)'}</span>
+            </button>
+          </div>
+
+          <div>
+            <div className="flex justify-between items-center text-[11px] mb-1">
+              <span className="text-slate-600 dark:text-slate-400 font-medium flex items-center">
+                <span>{isZh ? '向右拉力 F (0~120N):' : 'Rightward Pull F:'}</span>
+                <InfoTooltip
+                  title={isZh ? '水平向右外力 F' : 'Rightward Pull Force F'}
+                  formula="Fnet = F - f"
+                  description={
+                    isZh
+                      ? '由彈簧秤向右施加的外力。當 F ≤ fs,max 時靜摩擦力等大反向抵消 (合力為 0)；當 F > fs,max 時克服摩擦力，合力大於 0 開始向右加速。'
+                      : 'Pull force applied by the spring scale. When F ≤ fs,max, static friction cancels it; when F > fs,max, net force accelerates block rightward.'
+                  }
+                />
+              </span>
+              <span className="font-mono font-bold text-amber-600 dark:text-amber-400 text-sm">
+                {params.appliedForce} N
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="120"
+              step="1"
+              value={params.appliedForce}
+              onChange={(e) => setParams((prev) => ({ ...prev, appliedForce: Math.max(0, parseInt(e.target.value, 10)) }))}
+              className="w-full accent-amber-500 cursor-pointer"
+            />
+          </div>
+
+          {/* Quick step buttons starting from 0 */}
+          <div className="grid grid-cols-5 gap-1 text-[11px] font-mono">
+            {[0, 10, 20, 30, 50].map((val) => (
+              <button
+                key={val}
+                onClick={() => setParams((prev) => ({ ...prev, appliedForce: val }))}
+                className={`py-1 rounded-lg border font-medium transition-colors ${
+                  params.appliedForce === val
+                    ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-700'
+                    : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {val === 0 ? (isZh ? '0N(放開)' : '0N') : `${val}N`}
+              </button>
+            ))}
+          </div>
+
+          {/* Auto-Ramp Trigger Button */}
+          {onStartAutoRamp && onStopAutoRamp && (
+            <button
+              onClick={isAutoRamping ? onStopAutoRamp : onStartAutoRamp}
+              className={`w-full py-1.5 px-3 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs mt-0.5 ${
+                isAutoRamping
+                  ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
               }`}
             >
-              {val === 0 ? (isZh ? '0N(放開)' : '0N') : `${val}N`}
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>
+                {isAutoRamping
+                  ? (isZh ? '⏹ 停止自動加力' : '⏹ Stop Auto-Ramp')
+                  : (isZh ? '⚡ 一鍵平穩加力測試 (同步觀察雙圖)' : '⚡ Auto-Ramp Force Test')}
+              </span>
             </button>
-          ))}
+          )}
         </div>
-
-        {/* Auto-Ramp Trigger Button for Synchronized Exploration */}
-        {onStartAutoRamp && onStopAutoRamp && (
-          <button
-            onClick={isAutoRamping ? onStopAutoRamp : onStartAutoRamp}
-            className={`w-full py-1.5 px-3 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs mt-0.5 ${
-              isAutoRamping
-                ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>
-              {isAutoRamping
-                ? (isZh ? '⏹ 停止自動加力' : '⏹ Stop Auto-Ramp')
-                : (isZh ? '⚡ 一鍵平穩加力測試 (同步觀察雙圖)' : '⚡ Auto-Ramp Force Test')}
-            </span>
-          </button>
-        )}
-      </div>
+      )}
 
       {/* 2. Material & Friction Coefficients Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-xs flex flex-col gap-2.5">
+      <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-white/[0.06] p-3.5 shadow-sm flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
             <Sliders className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -328,7 +332,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       </div>
 
       {/* 3. Mass & Gravity Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3.5 shadow-xs flex flex-col gap-2.5">
+      <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-white/[0.06] p-3.5 shadow-sm flex flex-col gap-2.5">
         <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
           <Globe2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           <span>{isZh ? '質量與重力場環境' : 'Mass & Gravitational Field'}</span>
@@ -381,7 +385,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
           <select
             value={params.gravity}
             onChange={(e) => setParams((prev) => ({ ...prev, gravity: parseFloat(e.target.value) }))}
-            className="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+            className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
           >
             {GRAVITY_PRESETS.map((g) => (
               <option key={g.id} value={g.g}>
@@ -414,10 +418,10 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
               <button
                 key={o.id}
                 onClick={() => setParams((prev) => ({ ...prev, orientation: o.id as any }))}
-                className={`py-1.5 px-2 rounded-lg text-center font-medium transition-all ${
+                className={`py-1.5 px-2 rounded-xl text-center font-medium transition-all ${
                   params.orientation === o.id
                     ? 'bg-indigo-600 text-white font-semibold shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {isZh ? o.nameZh : o.nameEn}
@@ -428,7 +432,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       </div>
 
       {/* 4. Visual Display Options */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs flex flex-col gap-2.5">
+      <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-white/[0.06] p-3.5 shadow-sm flex flex-col gap-2.5">
         <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
           <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
           <span>{isZh ? '畫布受力標示' : 'Visual Display Options'}</span>
@@ -494,10 +498,10 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
               <button
                 key={s}
                 onClick={() => setVisuals((prev) => ({ ...prev, simSpeed: s }))}
-                className={`px-2 py-0.5 rounded text-[11px] font-semibold ${
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold transition-all ${
                   visuals.simSpeed === s
                     ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                 }`}
               >
                 {s}x
@@ -511,7 +515,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
       <button
         onClick={exportCSV}
         disabled={chartHistory.length === 0}
-        className="w-full py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full py-2.5 px-3 rounded-2xl border border-slate-200/60 dark:border-white/[0.06] bg-white/80 dark:bg-slate-900/70 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Download className="w-4 h-4 text-indigo-500" />
         <span>{isZh ? '匯出實驗數據 (CSV)' : 'Export Experiment Data (CSV)'}</span>

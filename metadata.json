@@ -1,6 +1,6 @@
 {
   "name": "Friction Simulator - Interactive Mechanics Lab",
-  "description": "Interactive mechanics friction simulation inspired by AweiLab. Explore static and kinetic friction, real-time F-f curves, inclined planes, free-body diagrams, and microscopic contact physics.",
+  "description": "Interactive mechanics friction simulation. Explore static and kinetic friction, real-time F-f curves, acceleration-time diagrams, and microscopic contact physics.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

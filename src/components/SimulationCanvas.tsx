@@ -36,7 +36,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   const isDraggingRef = useRef<boolean>(false);
   const dragStartXRef = useRef<number>(0);
   const initialForceRef = useRef<number>(0);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 220 });
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 250 });
 
   const isZh = lang === 'zh';
   const currentMaterial = MATERIAL_PRESETS.find((m) => m.id === params.materialId) || MATERIAL_PRESETS[0];
@@ -47,7 +47,7 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       if (canvasRef.current && canvasRef.current.parentElement) {
         const { clientWidth } = canvasRef.current.parentElement;
         const width = Math.max(340, Math.min(clientWidth, 1200));
-        const height = 220;
+        const height = 250;
         setCanvasSize({ width, height });
       }
     };
@@ -122,33 +122,25 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
     const w = canvasSize.width;
     const h = canvasSize.height;
 
-    // Background gradient
+    // Background gradient - Clean, subtle laboratory lighting
     const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, '#f8fafc');
-    bgGrad.addColorStop(1, '#f1f5f9');
+    bgGrad.addColorStop(0.72, '#f1f5f9');
+    bgGrad.addColorStop(1, '#e2e8f0');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // Subtle grid lines
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
-    const gridStep = 40;
-    for (let x = 0; x < w; x += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-    }
-    for (let y = 0; y < h; y += gridStep) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(w, y);
-      ctx.stroke();
+    // Subtle laboratory precision dot grid (low Data-Ink ratio, completely non-intrusive)
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.22)';
+    for (let x = 20; x < w; x += 36) {
+      for (let y = 18; y < h * 0.72 - 6; y += 36) {
+        ctx.fillRect(x - 0.5, y - 0.5, 1.2, 1.2);
+      }
     }
 
     // Scale: Pixels per meter
-    const ppm = Math.max(28, Math.min(48, w / 18));
-    const groundY = h * 0.70;
+    const ppm = Math.max(30, Math.min(50, w / 18));
+    const groundY = Math.round(h * 0.72);
 
     // 1. Draw Horizontal Ground Track
     ctx.save();
@@ -347,60 +339,60 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
   ]);
 
   return (
-    <div className="relative w-full bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs flex flex-col">
+    <div className="relative w-full bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-white/[0.06] overflow-hidden shadow-sm flex flex-col transition-all">
       {/* Canvas Header / Status Bar */}
-      <div className="px-4 py-2.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          {/* Status Badge */}
+      <div className="px-4 py-2.5 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xs border-b border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between flex-wrap gap-2 text-xs">
+        <div className="flex items-center gap-3">
+          {/* Status Badge with Luminous Glow */}
           {state.hitRightWall ? (
-            <span className="px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1.5 bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-              {isZh ? '🧱 撞擊右側護欄！已停止計時暫停' : '🧱 Hit Right Wall! Timing Stopped & Paused'}
+            <span className="px-3 py-1 rounded-xl font-bold inline-flex items-center gap-2 bg-rose-500/20 text-rose-700 dark:text-rose-200 border border-rose-500/40 shadow-xs shadow-rose-500/20">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+              {isZh ? '🧱 抵達右端護欄！已停止計時' : '🧱 Hit Right Wall! Timing Stopped'}
             </span>
           ) : (
             <span
-              className={`px-2.5 py-1 rounded-md font-semibold inline-flex items-center gap-1.5 ${
+              className={`px-3 py-1 rounded-xl font-bold inline-flex items-center gap-2 transition-all ${
                 state.stateType === 'impending_slip'
-                  ? 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700'
+                  ? 'bg-amber-500/20 text-amber-700 dark:text-amber-200 border border-amber-500/50 ring-4 ring-amber-500/25 shadow-md shadow-amber-500/20 animate-pulse'
                   : state.stateType === 'kinetic_sliding'
-                  ? 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border border-rose-300 dark:border-rose-700 animate-pulse'
+                  ? 'bg-rose-500/20 text-rose-700 dark:text-rose-200 border border-rose-500/50 ring-4 ring-rose-500/25 shadow-md shadow-rose-500/20'
                   : state.stateType === 'decelerating'
-                  ? 'bg-orange-100 dark:bg-orange-950 text-orange-800 dark:text-orange-200 border border-orange-300 dark:border-orange-700'
-                  : 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700'
+                  ? 'bg-orange-500/15 text-orange-700 dark:text-orange-200 border border-orange-500/40 ring-2 ring-orange-500/20'
+                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
               }`}
             >
               <span
-                className={`w-2 h-2 rounded-full ${
+                className={`w-2.5 h-2.5 rounded-full ${
                   state.stateType === 'impending_slip'
-                    ? 'bg-amber-500'
+                    ? 'bg-amber-500 animate-ping'
                     : state.stateType === 'kinetic_sliding'
-                    ? 'bg-rose-500'
+                    ? 'bg-rose-500 animate-pulse'
                     : state.stateType === 'decelerating'
                     ? 'bg-orange-500'
                     : 'bg-emerald-500'
                 }`}
               />
-              {state.stateType === 'static_rest' && (isZh ? '靜止 (靜摩擦平衡 f = -F)' : 'At Rest (f = -F)')}
-              {state.stateType === 'impending_slip' && (isZh ? '臨界點！即將滑動 (達最大靜摩擦力)' : 'Impending Slip (Max Static fs,max)')}
-              {state.stateType === 'kinetic_sliding' && (isZh ? '滑動中！(動摩擦力生效 fk = μk·FN)' : 'Kinetic Sliding (fk active)')}
+              {state.stateType === 'static_rest' && (isZh ? '靜止平衡 (f = F)' : 'At Rest (f = F)')}
+              {state.stateType === 'impending_slip' && (isZh ? '⚡ 臨界躍遷點！(達最大靜摩擦力 fs,max)' : '⚡ Impending Slip (Peak fs,max)')}
+              {state.stateType === 'kinetic_sliding' && (isZh ? '🔥 滑動加速中！(動摩擦力 fk 恆定)' : '🔥 Sliding (Constant fk)')}
               {state.stateType === 'decelerating' && (isZh ? '摩擦減速中' : 'Decelerating')}
             </span>
           )}
 
-          <span className="text-slate-500 dark:text-slate-400">
+          <span className="text-slate-500 dark:text-slate-400 text-[11px]">
             {isZh ? '摩擦力:' : 'Friction:'}{' '}
-            <strong className="text-slate-800 dark:text-slate-200 font-mono">
+            <strong className="text-slate-900 dark:text-slate-100 font-mono text-xs">
               {Math.abs(state.frictionForce).toFixed(1)} N
             </strong>
           </span>
 
-          <span className="text-slate-500 dark:text-slate-400 hidden sm:inline">
-            ({isZh ? '最大靜摩擦' : 'Max Static'} fs,max ={' '}
-            <span className="font-mono text-slate-700 dark:text-slate-300">
+          <span className="text-slate-500 dark:text-slate-400 hidden md:inline text-[11px]">
+            ({isZh ? '臨界' : 'Peak'} fs,max ={' '}
+            <span className="font-mono text-slate-800 dark:text-slate-200 font-medium">
               {state.maxStaticFriction.toFixed(1)} N
             </span>
             , {isZh ? '動摩擦' : 'Kinetic'} fk ={' '}
-            <span className="font-mono text-slate-700 dark:text-slate-300">
+            <span className="font-mono text-slate-800 dark:text-slate-200 font-medium">
               {state.kineticFrictionMag.toFixed(1)} N
             </span>
             )
@@ -409,13 +401,13 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
 
         {/* Quick Position Reset if at border */}
         <div className="flex items-center gap-2">
-          <span className="text-slate-400 text-[11px] hidden md:inline">
+          <span className="text-slate-400 dark:text-slate-500 text-[11px] hidden lg:inline">
             {isZh ? '💡 可在畫布上向右拖曳彈簧秤拉動木塊' : '💡 Drag rightward on canvas to pull'}
           </span>
           {(state.position > 4.5 || state.hitRightWall) && (
             <button
               onClick={onResetPosition}
-              className="px-2 py-0.5 text-[11px] bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 rounded font-medium"
+              className="px-2 py-0.5 text-[11px] bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors"
             >
               {isZh ? '移回起點 (-6m)' : 'Reset to Start (-6m)'}
             </button>
@@ -437,11 +429,11 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
       </div>
 
       {/* Canvas Bottom Legend */}
-      <div className="px-4 py-2 bg-white/70 dark:bg-slate-900/70 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 flex-wrap gap-2">
+      <div className="px-4 py-2 bg-slate-50/60 dark:bg-slate-900/60 border-t border-slate-200/50 dark:border-white/[0.05] flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 flex-wrap gap-2">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-            <span>{isZh ? '正向力 FN (mg)' : 'Normal FN'}</span>
+            <span>{isZh ? '正向力 FN' : 'Normal FN'}</span>
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
@@ -453,17 +445,17 @@ export const SimulationCanvas: React.FC<SimulationCanvasProps> = ({
           </span>
           <span className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 inline-block" />
-            <span>{isZh ? '重力 W (mg)' : 'Gravity W'}</span>
+            <span>{isZh ? '重力 W' : 'Gravity W'}</span>
           </span>
           {visuals.showNetForce && (
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-500 inline-block" />
-              <span>{isZh ? '合力 Fnet' : 'Net Force'}</span>
+              <span>{isZh ? '合外力 Fnet' : 'Net Force'}</span>
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 font-mono">
+        <div className="flex items-center gap-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
           <span>x = {state.position.toFixed(2)} m</span>
           <span>v = {state.velocity.toFixed(2)} m/s</span>
           <span>a = {state.acceleration.toFixed(2)} m/s²</span>

@@ -53,8 +53,9 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
     const plotW = width - padLeft - padRight;
     const plotH = height - padTop - padBottom;
 
-    // Background
-    ctx.fillStyle = '#ffffff';
+    // Background - adapts smoothly to light/dark
+    const isDark = document.documentElement.classList.contains('dark');
+    ctx.fillStyle = isDark ? '#0b1120' : '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
     // Compute coordinate limits
@@ -66,8 +67,8 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
     const scaleX = (val: number) => padLeft + (val / maxValF) * plotW;
     const scaleY = (val: number) => padTop + plotH - (val / maxValf) * plotH;
 
-    // Grid lines & Axis
-    ctx.strokeStyle = '#f1f5f9';
+    // Minimal faint grid lines (Data-Ink reduction)
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(148, 163, 184, 0.12)';
     ctx.lineWidth = 1;
 
     // Horizontal grid
@@ -80,7 +81,7 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
       ctx.lineTo(padLeft + plotW, py);
       ctx.stroke();
 
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
       ctx.font = '10px monospace';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
@@ -97,16 +98,16 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
       ctx.lineTo(px, padTop + plotH);
       ctx.stroke();
 
-      ctx.fillStyle = '#64748b';
+      ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
       ctx.font = '10px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(`${xVal.toFixed(0)}`, px, padTop + plotH + 6);
     }
 
-    // Axes Lines
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 1.5;
+    // Minimal Axes Lines
+    ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1';
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(padLeft, padTop);
     ctx.lineTo(padLeft, padTop + plotH);
@@ -114,15 +115,15 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
     ctx.stroke();
 
     // Axis Labels
-    ctx.fillStyle = '#1e293b';
-    ctx.font = 'bold 11px sans-serif';
+    ctx.fillStyle = isDark ? '#94a3b8' : '#64748b';
+    ctx.font = '500 10px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(isZh ? '外力 / 驅動力 F (N)' : 'Applied Force F (N)', padLeft + plotW / 2, height - 12);
+    ctx.fillText(isZh ? '外加拉力 F (N)' : 'Applied Force F (N)', padLeft + plotW / 2, height - 10);
 
     ctx.save();
-    ctx.translate(14, padTop + plotH / 2);
+    ctx.translate(12, padTop + plotH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText(isZh ? '摩擦力 f (N)' : 'Friction Force f (N)', 0, 0);
+    ctx.fillText(isZh ? '摩擦力 f (N)' : 'Friction f (N)', 0, 0);
     ctx.restore();
 
     // 1. Shaded Regions: Static Zone vs Kinetic Zone
@@ -254,13 +255,13 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
   }, [state, params, history, isZh, fsMax, fk]);
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-3 sm:p-4 shadow-xs flex flex-col gap-3">
-      {/* Header with Title & Auto-ramp button */}
+    <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur-md rounded-2xl border border-slate-200/60 dark:border-white/[0.06] p-3 sm:p-3.5 shadow-sm flex flex-col gap-2.5 transition-all">
+      {/* Minimal Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-            {isZh ? '施力 vs 摩擦力 (F - f) 實時特徵圖' : 'F - f Characteristic Curve'}
+          <TrendingUp className="w-3.5 h-3.5 text-indigo-500" />
+          <h3 className="text-xs font-bold text-slate-800 dark:text-slate-200 tracking-wide">
+            {isZh ? '受力特徵圖 (F - f 曲線)' : 'F - f Characteristic Curve'}
           </h3>
         </div>
 
@@ -268,36 +269,36 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
           {/* Auto ramp test button */}
           <button
             onClick={isAutoRamping ? onStopAutoRamp : onStartAutoRamp}
-            className={`px-2.5 py-1 text-xs rounded-md font-semibold flex items-center gap-1 transition-colors ${
+            className={`px-2 py-0.5 text-[11px] rounded-lg font-semibold flex items-center gap-1 transition-all ${
               isAutoRamping
-                ? 'bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950 dark:text-rose-200 animate-pulse'
-                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
+                ? 'bg-rose-500 text-white animate-pulse'
+                : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/50'
             }`}
-            title={isZh ? '系統以恆定速率自動緩慢加大推力，完整畫出靜摩擦至動摩擦曲線' : 'Gradually ramps force to plot complete transition curve'}
+            title={isZh ? '自動平穩加力，畫出受力特徵曲線' : 'Auto ramp force test'}
           >
             <Play className="w-3 h-3" />
-            <span>{isAutoRamping ? (isZh ? '停止測試' : 'Stop Test') : (isZh ? '自動增力測試' : 'Auto Ramp Test')}</span>
+            <span>{isAutoRamping ? (isZh ? '停止' : 'Stop') : (isZh ? '自動加力' : 'Auto Ramp')}</span>
           </button>
 
           {/* Clear History */}
           <button
             onClick={onClearHistory}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             title={isZh ? '清除軌跡記錄' : 'Clear recorded trail'}
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-3 h-3" />
           </button>
         </div>
       </div>
 
       {/* Chart Canvas */}
-      <div className="w-full bg-white dark:bg-slate-950 rounded-lg border border-slate-100 dark:border-slate-800 overflow-hidden flex justify-center">
-        <canvas ref={canvasRef} className="w-full h-[200px] block select-none" />
+      <div className="w-full bg-white dark:bg-slate-950/80 rounded-xl border border-slate-200/40 dark:border-white/[0.04] overflow-hidden flex justify-center">
+        <canvas ref={canvasRef} className="w-full h-[190px] block select-none" />
       </div>
 
       {/* Characteristic Metrics Ribbon */}
       <div className="grid grid-cols-3 gap-2 text-center text-xs">
-        <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+        <div className="p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-white/[0.04]">
           <div className="text-[10px] text-slate-500 dark:text-slate-400">
             {isZh ? '最大靜摩擦力' : 'Max Static fs,max'}
           </div>
@@ -307,7 +308,7 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
           <div className="text-[9px] text-slate-400">μs·FN</div>
         </div>
 
-        <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+        <div className="p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-white/[0.04]">
           <div className="text-[10px] text-slate-500 dark:text-slate-400">
             {isZh ? '動摩擦力' : 'Kinetic fk'}
           </div>
@@ -317,14 +318,14 @@ export const ForceDiagramChart: React.FC<ForceDiagramChartProps> = ({
           <div className="text-[9px] text-slate-400">μk·FN</div>
         </div>
 
-        <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60">
+        <div className="p-2 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-white/[0.04]">
           <div className="text-[10px] text-slate-500 dark:text-slate-400">
             {isZh ? '摩擦力降幅 Δf' : 'Drop Δf'}
           </div>
           <div className="font-bold text-amber-600 dark:text-amber-400 font-mono text-sm">
             {(fsMax - fk).toFixed(1)} N
           </div>
-          <div className="text-[9px] text-slate-400">{(((fsMax - fk) / (fsMax || 1)) * 100).toFixed(0)}% drop</div>
+          <div className="text-[9px] text-slate-400">{(((fsMax - fk) / (fsMax || 1)) * 100).toFixed(0)}% 跌落</div>
         </div>
       </div>
     </div>

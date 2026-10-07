@@ -16,8 +16,10 @@ import { computePhysicsStep } from './utils/physicsEngine';
 import { soundManager } from './utils/soundEffects';
 import { Header } from './components/Header';
 import { SimulationCanvas } from './components/SimulationCanvas';
+import { PrimaryControlBar } from './components/PrimaryControlBar';
 import { ForceDiagramChart } from './components/ForceDiagramChart';
 import { KinematicsCharts } from './components/KinematicsCharts';
+import { SecondarySettingsDrawer } from './components/SecondarySettingsDrawer';
 import { ControlsPanel } from './components/ControlsPanel';
 import { MicroscopicView } from './components/MicroscopicView';
 import { TheoryModal } from './components/TheoryModal';
@@ -67,6 +69,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState<boolean>(true);
   const [lang, setLang] = useState<'zh' | 'en'>('zh');
   const [isTheoryOpen, setIsTheoryOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [isAutoRamping, setIsAutoRamping] = useState<boolean>(false);
   const [timeLimit, setTimeLimit] = useState<number>(10);
   const [autoStop, setAutoStop] = useState<boolean>(true);
@@ -307,6 +310,26 @@ export default function App() {
     };
   }, []);
 
+  // Export CSV Callback
+  const handleExportCSV = useCallback(() => {
+    if (forceHistory.length === 0) return;
+    const header = 'Time(s),AppliedForce(N),FrictionForce(N),IsSliding\n';
+    const rows = forceHistory
+      .map(
+        (pt) =>
+          `${pt.time.toFixed(2)},${pt.appliedForce.toFixed(2)},${pt.frictionForce.toFixed(2)},${pt.isSliding}`
+      )
+      .join('\n');
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `friction_experiment_data_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [forceHistory]);
+
   return (
     <div className="min-h-screen bg-slate-100/70 dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
       {/* Top Application Header & Nav */}
@@ -321,68 +344,79 @@ export default function App() {
         soundEnabled={visuals.soundEnabled}
         setSoundEnabled={(val) => setVisuals((prev) => ({ ...prev, soundEnabled: val }))}
         onOpenTheory={() => setIsTheoryOpen(true)}
+        onExportCSV={handleExportCSV}
       />
 
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto w-full p-3 sm:p-4 flex-1 flex flex-col gap-4">
-        {/* VIEW TAB 1: Main Simulation & Curves */}
+        {/* VIEW TAB 1: Main Simulation - Triple-Sync One-Screen Stage */}
         {activeTab === 'simulation' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-            {/* Left 8 columns: Canvas + Real-Time Charts */}
-            <div className="lg:col-span-8 flex flex-col gap-3.5">
-              {/* Physics Simulation Canvas */}
-              <SimulationCanvas
+          <div className="flex flex-col gap-3.5 w-full">
+            {/* 1. Main Phenomenon Stage: Simulation Track */}
+            <SimulationCanvas
+              state={state}
+              params={params}
+              visuals={visuals}
+              lang={lang}
+              onForceChange={handleForceChange}
+              onResetPosition={handleResetPosition}
+            />
+
+            {/* 2. Primary High-Frequency Pull Console (Directly integrated under track) */}
+            <PrimaryControlBar
+              params={params}
+              setParams={setParams}
+              state={state}
+              isPlaying={isPlaying}
+              onTogglePlay={handleTogglePlay}
+              onResetPosition={handleResetPosition}
+              isAutoRamping={isAutoRamping}
+              onStartAutoRamp={handleStartAutoRamp}
+              onStopAutoRamp={handleStopAutoRamp}
+              onToggleSettings={() => setIsSettingsOpen(true)}
+              isSettingsOpen={isSettingsOpen}
+              lang={lang}
+            />
+
+            {/* 3. Dual Synchronized Diagnostic Curves: 受力變化 (F-f) 與 a-t 圖並排同屏 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              {/* 受力特徵圖 (F - f 曲線) */}
+              <ForceDiagramChart
                 state={state}
                 params={params}
-                visuals={visuals}
+                history={forceHistory}
                 lang={lang}
-                onForceChange={handleForceChange}
-                onResetPosition={handleResetPosition}
-              />
-
-              {/* Data & Curves Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {/* Real-time F-f Characteristic Curve */}
-                <ForceDiagramChart
-                  state={state}
-                  params={params}
-                  history={forceHistory}
-                  lang={lang}
-                  onClearHistory={() => setForceHistory([])}
-                  isAutoRamping={isAutoRamping}
-                  onStartAutoRamp={handleStartAutoRamp}
-                  onStopAutoRamp={handleStopAutoRamp}
-                />
-
-                {/* Real-time Acceleration vs. Time (a-t) Diagram */}
-                <KinematicsCharts
-                  state={state}
-                  history={kinematicHistory}
-                  lang={lang}
-                  timeLimit={timeLimit}
-                  setTimeLimit={setTimeLimit}
-                  autoStop={autoStop}
-                  setAutoStop={setAutoStop}
-                  onRestartTiming={handleRestartTiming}
-                />
-              </div>
-            </div>
-
-            {/* Right 4 columns: Physics Controls & Parameters Panel */}
-            <div className="lg:col-span-4">
-              <ControlsPanel
-                params={params}
-                setParams={setParams}
-                state={state}
-                visuals={visuals}
-                setVisuals={setVisuals}
-                lang={lang}
-                chartHistory={forceHistory}
+                onClearHistory={() => setForceHistory([])}
                 isAutoRamping={isAutoRamping}
                 onStartAutoRamp={handleStartAutoRamp}
                 onStopAutoRamp={handleStopAutoRamp}
               />
+
+              {/* 運動學加速度圖 (a - t 曲線) */}
+              <KinematicsCharts
+                state={state}
+                history={kinematicHistory}
+                lang={lang}
+                timeLimit={timeLimit}
+                setTimeLimit={setTimeLimit}
+                autoStop={autoStop}
+                setAutoStop={setAutoStop}
+                onRestartTiming={handleRestartTiming}
+              />
             </div>
+
+            {/* 4. Secondary Parameters Drawer (Settings slide-over) */}
+            <SecondarySettingsDrawer
+              isOpen={isSettingsOpen}
+              onClose={() => setIsSettingsOpen(false)}
+              params={params}
+              setParams={setParams}
+              state={state}
+              visuals={visuals}
+              setVisuals={setVisuals}
+              lang={lang}
+              chartHistory={forceHistory}
+            />
           </div>
         )}
 
@@ -404,6 +438,7 @@ export default function App() {
                 isAutoRamping={isAutoRamping}
                 onStartAutoRamp={handleStartAutoRamp}
                 onStopAutoRamp={handleStopAutoRamp}
+                hidePrimaryForce={false}
               />
             </div>
           </div>
