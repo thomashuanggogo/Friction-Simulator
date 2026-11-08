@@ -255,5 +255,6 @@ let last=performance.now();
 function tick(now){let dt=(now-last)/1000;last=now;dt=Math.min(dt,0.05)*speed;const p=physics();const a=p.a;if(p.moving){v+=a*dt;x+=v*dt*18;if(x>560){x=560;v=0;}}else{v=0;}aHist.push(a);if(aHist.length>200)aHist.shift();$('roF').textContent=F.toFixed(1);$('roFr').textContent=p.f.toFixed(2);$('roA').textContent=a.toFixed(2);$('roV').textContent=v.toFixed(2);const sb=$('stateBox');if(p.moving){sb.textContent='動起來了：摩擦力固定 17.15 牛頓，加速度 '+(a.toFixed(2))+' m/s²';sb.className='state move';}else{sb.textContent='靜止：摩擦力等於拉力（'+p.f.toFixed(1)+' 牛頓），加速度 0';sb.className='state';}drawScene(p);drawFF(p);drawAT();requestAnimationFrame(tick);}
 requestAnimationFrame(tick);
 </script>
+<div id="next-station" style="margin:40px auto 32px;padding:0 16px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Microsoft JhengHei',sans-serif;"><a href="https://elevator-lab.thomasgogo.workers.dev/" style="display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 28px;font-size:18px;font-weight:600;color:#0071e3;background:#ffffff;border:1px solid #d2d2d7;border-radius:999px;text-decoration:none;">下一站：電梯超重・失重實驗室 →</a></div>
 </body>
 </html>
